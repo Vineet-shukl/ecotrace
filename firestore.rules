@@ -1,28 +1,91 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Only allow users to read/write their own data
+
+    // ── Helper functions ──────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+    function isValidActivity() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['category', 'subType', 'co2eKg', 'uid'])
+          && d.category is string
+          && d.category in ['transport', 'diet', 'energy', 'flights']
+          && d.subType  is string
+          && d.co2eKg   is number
+          && d.co2eKg   >= 0
+          && d.co2eKg   <= 500   // sanity cap: 500 kg per single entry
+          && d.uid      is string;
+    }
+
+    // ── User profile ──────────────────────────────────────────────────────
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
+      allow read:   if isOwner(userId);
+      allow create: if isOwner(userId)
+                    && request.resource.data.keys().hasAll(['email']);
+      allow update: if isOwner(userId)
+                    // Prevent client from overwriting server-computed fields
+                    && !('todayCo2eKg' in request.resource.data.diff(resource.data).affectedKeys())
+                    || request.resource.data.todayCo2eKg == resource.data.get('todayCo2eKg', 0);
+
+      // ── Activities ──────────────────────────────────────────────────────
       match /activities/{activityId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read:   if isOwner(userId);
+        allow create: if isOwner(userId) && isValidActivity();
+        allow update: if isOwner(userId) && isValidActivity();
+        allow delete: if isOwner(userId);
       }
+
+      // ── Aggregates — server writes only (Cloud Functions) ────────────────
       match /aggregates/{period} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read:  if isOwner(userId);
+        allow write: if false;  // Cloud Functions only via Admin SDK
       }
+
+      // ── Nudges — server creates, client can update status only ───────────
       match /nudges/{nudgeId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read:   if isOwner(userId);
+        allow create: if false;  // Cloud Run + Functions only
+        allow update: if isOwner(userId)
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['status', 'respondedAt']);
+        allow delete: if isOwner(userId);
       }
+
+      // ── Achievements — server writes, client reads (sets displayed flag) ─
       match /achievements/{achievementId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read:   if isOwner(userId);
+        allow create: if false;  // Cloud Functions only
+        allow update: if isOwner(userId)
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['displayed']);
+        allow delete: if false;
+      }
+
+      // ── Internal nudge budget — server only ──────────────────────────────
+      match /_nudgeBudget/{date} {
+        allow read, write: if false;  // Cloud Run only
       }
     }
-    
-    // Emission factors are public readable but not writable
+
+    // ── Emission factors — authenticated read, no client writes ──────────
     match /emissionFactors/{version} {
-      allow read: if request.auth != null;
+      allow read:  if isAuth();
       allow write: if false;
+    }
+
+    // ── Nudge cache — server only ─────────────────────────────────────────
+    match /_nudgeCache/{hash} {
+      allow read, write: if false;
+    }
+
+    // ── Default deny — explicit catch-all ────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
+

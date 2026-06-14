@@ -30,7 +30,10 @@ for (const key of REQUIRED_KEYS) {
 
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const analytics = getAnalytics(app);
+export const auth          = getAuth(app);
+export const db            = getFirestore(app);
+export const analytics     = getAnalytics(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Always show the Google account picker (avoids silent sign-in hangs)
+googleProvider.setCustomParameters({ prompt: 'select_account' });

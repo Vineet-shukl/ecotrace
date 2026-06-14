@@ -1,28 +1,43 @@
 // src/pages/AuthPage.jsx — Sign-in with Google + Email/Password
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 
 export default function AuthPage() {
-  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [mode,    setMode]    = useState('signin'); // 'signin' | 'signup'
+  const [email,   setEmail]   = useState('');
+  const [password,setPassword]= useState('');
+  const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
 
+  /**
+   * On mount: pick up the result from a completed Google redirect sign-in.
+   * Returns null on a normal (non-redirect) page load — this is fine.
+   * AuthContext listens to onAuthStateChanged and navigates automatically.
+   */
+  useEffect(() => {
+    setLoading(true);
+    getRedirectResult(auth)
+      .then(() => { /* AuthContext picks up user via onAuthStateChanged */ })
+      .catch(e  => { if (e.code !== 'auth/null-provider') setError(e.message); })
+      .finally(()=> { setLoading(false); });
+  }, []);
+
+  /** Starts the Google Sign-In redirect. Page navigates to Google then returns. */
   const handleGoogle = async () => {
     setError('');
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithRedirect(auth, googleProvider);
+      // Page navigates away — loading state clears on return via useEffect
     } catch (e) {
-      setError(e.message);
-    } finally {
       setLoading(false);
+      setError(e.message);
     }
   };
 

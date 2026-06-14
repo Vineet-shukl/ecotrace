@@ -61,9 +61,18 @@ export default function LogActivity() {
   }, [user]);
 
   function calcCo2e() {
-    if (tab === 'transport') return EF.transport[transMode] * Number(transKm || 0);
-    if (tab === 'diet')      return EF.diet[dietType];
-    if (tab === 'energy')    return EF.energy[energyType] * Number(energyAmt || 0);
+    // Object.hasOwn guards prevent prototype-pollution attacks on factor lookups
+    if (tab === 'transport') {
+      const f = Object.hasOwn(EF.transport, transMode) ? EF.transport[transMode] : 0;
+      return f * Number(transKm || 0);
+    }
+    if (tab === 'diet') {
+      return Object.hasOwn(EF.diet, dietType) ? EF.diet[dietType] : 0;
+    }
+    if (tab === 'energy') {
+      const f = Object.hasOwn(EF.energy, energyType) ? EF.energy[energyType] : 0;
+      return f * Number(energyAmt || 0);
+    }
     return 0;
   }
 
@@ -146,7 +155,7 @@ export default function LogActivity() {
               🕐 Yesterday's activity
             </div>
             <div style={{ fontWeight: 600, fontSize: 'var(--fs-sm)' }}>
-              {SUBTYPE_LABELS[yesterday.subType] ?? yesterday.subType}
+              {(Object.hasOwn(SUBTYPE_LABELS, yesterday.subType) ? SUBTYPE_LABELS[yesterday.subType] : yesterday.subType)}
               {yesterday.amount > 1 && ` — ${yesterday.amount} ${yesterday.unit}`}
             </div>
             <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-muted)' }}>

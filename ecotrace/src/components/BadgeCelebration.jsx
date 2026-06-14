@@ -71,7 +71,7 @@ export default function BadgeCelebration() {
 
   if (!current) return null;
 
-  const colors = TIER_COLORS[current.tier] ?? TIER_COLORS.bronze;
+  const colors = (Object.hasOwn(TIER_COLORS, current.tier) ? TIER_COLORS[current.tier] : null) ?? TIER_COLORS.bronze;
 
   return (
     <div

@@ -84,6 +84,21 @@ async function getAiNudges(uid, userData, weekAgg, count = 2) {
   try {
     const model  = getVertex().preview.getGenerativeModel({
       model: MODEL,
+      // System instruction establishes safety boundaries and behavioral guidelines
+      // See: https://ai.google.dev/gemini-api/docs/safety-guidance
+      systemInstruction: {
+        role: 'system',
+        parts: [{
+          text: [
+            'You are a helpful sustainability coach for the EcoTrace app.',
+            'Your only purpose is to provide personalised, evidence-based carbon reduction tips.',
+            'You MUST NOT produce content unrelated to carbon footprint, sustainability, or eco-friendly habits.',
+            'You MUST NOT include personally identifiable information, medical advice, financial advice, or harmful content.',
+            'Always be encouraging, positive, and constructive. Never shame or guilt the user.',
+            'Output only valid JSON matching the schema provided. No markdown, no prose outside JSON.',
+          ].join(' '),
+        }],
+      },
       generationConfig: {
         responseMimeType: 'application/json',
         maxOutputTokens: 512,

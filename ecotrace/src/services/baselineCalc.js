@@ -46,6 +46,7 @@ export function calculateBaseline(answers, factors) {
   // Category percentages for pie chart
   const categoryPct = {};
   for (const [cat, val] of Object.entries(breakdown)) {
+    if (!Object.hasOwn(breakdown, cat)) continue; // guard
     categoryPct[cat] = totalKgPerYear > 0
       ? Math.round((val / totalKgPerYear) * 100)
       : 0;
@@ -69,7 +70,11 @@ export function calculateBaseline(answers, factors) {
  * @param {object} factors   – emissionFactors/v1 document
  */
 export function computeActivityCo2e(category, subType, amount, factors) {
-  const factor = factors?.[category]?.[subType] ?? 0;
+  // Guard against prototype pollution — only look up known own properties
+  const categoryMap = factors?.[category];
+  const factor = (categoryMap && Object.hasOwn(categoryMap, subType))
+    ? categoryMap[subType]
+    : 0;
   return +(factor * amount).toFixed(4);
 }
 

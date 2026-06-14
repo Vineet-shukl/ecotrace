@@ -1,0 +1,8 @@
+name: ecotrace-main-push
+description: "Deploy on push to main branch"
+github:
+  owner: Vineet-shukl
+  name: ecotrace
+  push:
+    branch: "^main$"
+filename: cloudbuild.yaml

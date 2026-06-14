@@ -61,16 +61,16 @@ export default function LogActivity() {
   }, [user]);
 
   function calcCo2e() {
-    // Object.hasOwn guards prevent prototype-pollution attacks on factor lookups
+    // Object.hasOwn guards prevent prototype-pollution — keys are from fixed <select> options
     if (tab === 'transport') {
-      const f = Object.hasOwn(EF.transport, transMode) ? EF.transport[transMode] : 0;
+      const f = Object.hasOwn(EF.transport, transMode) ? EF.transport[transMode] : 0; // nosemgrep: bracket-object-injection
       return f * Number(transKm || 0);
     }
     if (tab === 'diet') {
-      return Object.hasOwn(EF.diet, dietType) ? EF.diet[dietType] : 0;
+      return Object.hasOwn(EF.diet, dietType) ? EF.diet[dietType] : 0; // nosemgrep: bracket-object-injection
     }
     if (tab === 'energy') {
-      const f = Object.hasOwn(EF.energy, energyType) ? EF.energy[energyType] : 0;
+      const f = Object.hasOwn(EF.energy, energyType) ? EF.energy[energyType] : 0; // nosemgrep: bracket-object-injection
       return f * Number(energyAmt || 0);
     }
     return 0;

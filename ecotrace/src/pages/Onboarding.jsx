@@ -131,7 +131,7 @@ export default function Onboarding() {
     });
   }, [user]);
 
-  const current = STEPS[step];
+  const current = STEPS[step]; // nosemgrep: bracket-object-injection — index is 0..STEPS.length-1
   const progress = Math.round(((step) / STEPS.length) * 100);
   const isLast   = step === STEPS.length - 1;
 
@@ -244,11 +244,11 @@ export default function Onboarding() {
           <div style={{ marginBottom: 'var(--sp-6)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
             {Object.entries(result.breakdown).map(([cat, val]) => {
               const icons = { transport: '🚗', diet: '🥗', energy: '⚡', flights: '✈️' };
-              const pct   = result.categoryPct[cat] ?? 0;
+              const pct   = result.categoryPct[cat] ?? 0; // nosemgrep: bracket-object-injection — cat from Object.entries of our computed breakdown
               return (
                 <div key={cat}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--sp-1)', fontSize: 'var(--fs-sm)' }}>
-                    <span>{icons[cat]} {cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+                    <span>{Object.hasOwn(icons, cat) ? icons[cat] : '📊'} {cat.charAt(0).toUpperCase() + cat.slice(1)}</span> {/* nosemgrep: bracket-object-injection */}
                     <span style={{ fontWeight: 600 }}>{Math.round(val).toLocaleString()} kg ({pct}%)</span>
                   </div>
                   <div className="progress-track">
@@ -347,7 +347,7 @@ export default function Onboarding() {
             style={{ display: 'grid', gap: 'var(--sp-3)', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', marginBottom: 'var(--sp-6)' }}
           >
             {current.options.map(opt => {
-              const selected = answers[current.id] === opt.value;
+              const selected = answers[current.id] === opt.value; // nosemgrep: bracket-object-injection — current.id is a static STEPS constant
               return (
                 <button
                   key={opt.value}
@@ -394,7 +394,7 @@ export default function Onboarding() {
                   placeholder={current.placeholder}
                   min={current.min}
                   max={current.max}
-                  value={answers[current.id] ?? ''}
+                  value={answers[current.id] ?? ''} // nosemgrep: bracket-object-injection — current.id is a static STEPS constant
                   onChange={e => setAnswers(prev => ({ ...prev, [current.id]: e.target.value }))}
                   style={{ paddingRight: 'var(--sp-16)' }}
                   autoFocus
@@ -432,7 +432,7 @@ export default function Onboarding() {
               id="quiz-next-btn"
               className="btn btn-primary"
               onClick={() => advance()}
-              disabled={!current.optional && !answers[current.id]}
+              disabled={!current.optional && !answers[current.id]} // nosemgrep: bracket-object-injection — current.id is a static STEPS constant
               style={{ flex: 1 }}
             >
               {isLast ? 'Calculate My Footprint 🌍' : 'Next →'}

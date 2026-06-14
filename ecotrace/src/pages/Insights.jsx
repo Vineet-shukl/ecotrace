@@ -191,7 +191,7 @@ function NudgeCard({ nudge, delay, onAction }) {
       <div className="nudge-header">
         <div>
           <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
-            {(Object.hasOwn(CATEGORY_ICONS, nudge.category) ? CATEGORY_ICONS[nudge.category] : '💡')} {nudge.category}
+            {(Object.hasOwn(CATEGORY_ICONS, nudge.category) ? CATEGORY_ICONS[nudge.category] : '💡')} {nudge.category} {/* nosemgrep: bracket-object-injection */}
           </span>
           <div className="nudge-title" style={{ marginTop: 'var(--sp-1)' }}>{nudge.title}</div>
         </div>

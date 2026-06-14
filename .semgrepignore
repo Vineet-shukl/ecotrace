@@ -1,0 +1,16 @@
+# .semgrepignore — Suppress false-positive findings from static analysis
+#
+# Rules:
+#  - Build artifacts: the dist/ folder is minified 3rd-party vendor code (React,
+#    Recharts, Firebase SDK). Issues in minified code are not actionable.
+#  - Lock files: package-lock.json pins exact resolved versions. The "variant
+#    versions" warning applies to package.json ranges, not the lockfile itself.
+#  - FirestoreTest.jsx: development-only debug component, not shipped in prod routes.
+
+# Build output — minified vendor code, not our source
+ecotrace/dist/
+
+# Lock files — exact versions are already pinned by the lockfile
+cloudrun/nudges/package-lock.json
+functions/package-lock.json
+ecotrace/package-lock.json

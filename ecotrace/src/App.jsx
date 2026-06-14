@@ -2,7 +2,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout        from './components/Layout';
-import FirestoreTest from './components/FirestoreTest';
 import AuthPage      from './pages/AuthPage';
 import Onboarding   from './pages/Onboarding';
 import Dashboard    from './pages/Dashboard';
@@ -63,7 +62,6 @@ function AppRoutes() {
           <RequireAuth>
             <Layout>
               <Dashboard />
-              <FirestoreTest />
             </Layout>
           </RequireAuth>
         }

@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import BadgeCelebration from './BadgeCelebration';
 
 const NAV_ITEMS = [
   { to: '/dashboard', icon: '📊', label: 'Dashboard' },
@@ -121,6 +122,9 @@ export default function Layout({ children }) {
       <main className="main-content" id="main-content">
         {children}
       </main>
+
+      {/* Badge celebration — global, polls Firestore for new badges */}
+      <BadgeCelebration />
     </div>
   );
 }

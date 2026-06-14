@@ -4,7 +4,8 @@ import {
   collection, addDoc, getDocs, query,
   orderBy, limit, serverTimestamp, where, Timestamp
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { logEvent } from 'firebase/analytics';
+import { db, analytics } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 
 // Emission factors mirror emissionFactors/v1 in Firestore
@@ -82,6 +83,14 @@ export default function LogActivity() {
         uid: user.uid,
       });
       setSuccess(`Logged! +${co2eKg.toFixed(2)} kg CO₂e`);
+      // GA4 event
+      if (analytics) {
+        logEvent(analytics, 'log_activity', {
+          category:  tab,
+          sub_type:  tab === 'transport' ? transMode : tab === 'diet' ? dietType : energyType,
+          co2e_kg:   co2eKg,
+        });
+      }
       setTransKm(''); setEnergyAmt('');
     } catch (err) {
       setError('Failed to save: ' + err.message);

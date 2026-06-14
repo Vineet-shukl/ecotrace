@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { logEvent } from 'firebase/analytics';
+import { db, analytics } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateBaseline, footprintLabel } from '../services/baselineCalc';
 
@@ -140,6 +141,10 @@ export default function Onboarding() {
   }
 
   function advance(latestAnswers = answers) {
+    // GA4 quiz step event
+    if (analytics) {
+      logEvent(analytics, 'quiz_step_complete', { step: step + 1, question_id: current.id });
+    }
     if (step < STEPS.length - 1) {
       setStep(s => s + 1);
     } else {
@@ -175,6 +180,13 @@ export default function Onboarding() {
         onboardedAt: new Date(),
         factorsVersion: 'v1',
       }, { merge: true });
+      // GA4 onboarding complete
+      if (analytics) {
+        logEvent(analytics, 'onboarding_complete', {
+          baseline_kg_year: result.totalKgPerYear,
+          reduction_goal_pct: Number(result.answers.reduction_goal_pct ?? 10),
+        });
+      }
       navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('Save failed:', err);

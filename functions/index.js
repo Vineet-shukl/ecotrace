@@ -2,18 +2,18 @@
  * functions/index.js — Firebase Cloud Functions (2nd gen)
  *
  * Functions:
- *  1. onUserCreate     — Auth onCreate trigger: provisions user profile doc
- *  2. onActivityWrite  — Firestore onWrite trigger: recomputes daily/weekly/monthly aggregates
+ *  1. provisionUserProfile — Firestore onCreate for users/{uid}
+ *  2. onActivityWrite      — recomputes daily/weekly/monthly aggregates + streak
+ *  3. gamificationEngine   — evaluates and awards badges on aggregate change
  */
 'use strict';
 
-const { onRequest }                         = require('firebase-functions/v2/https');
 const { onDocumentWritten }                 = require('firebase-functions/v2/firestore');
-const { beforeUserCreated }                 = require('firebase-functions/v2/identity');
 const { getAuth }                           = require('firebase-admin/auth');
 const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { initializeApp }                     = require('firebase-admin/app');
 const { aggregateActivities }               = require('./src/emissionCalc');
+const { evaluateBadges }                    = require('./src/gamification');
 
 // Initialise once
 const app = initializeApp();
@@ -131,6 +131,99 @@ exports.onActivityWrite = onDocumentWritten(
   }
 );
 
+// ── 3. gamificationEngine: badge evaluation ─────────────────────────────────
+exports.gamificationEngine = onDocumentWritten(
+  { document: 'users/{uid}/aggregates/{period}', region: REGION },
+  async (event) => {
+    const { uid } = event.params;
+    if (!event.data.after.exists) return null; // ignore deletes
+
+    try {
+      // Fetch user doc + already-earned badges
+      const userRef   = db.collection('users').doc(uid);
+      const achRef    = db.collection('users').doc(uid).collection('achievements');
+      const [userSnap, achSnap] = await Promise.all([userRef.get(), achRef.get()]);
+
+      if (!userSnap.exists) return null;
+      const userData       = userSnap.data();
+      const alreadyEarned  = achSnap.docs.map(d => d.id);
+
+      // Build stats snapshot for badge evaluation
+      const now   = new Date();
+      const weekKey  = `week_${now.getFullYear()}-W${isoWeek(now)}`;
+      const monthKey = `month_${now.toISOString().slice(0,7)}`;
+
+      const [weekSnap, monthSnap, allActSnap] = await Promise.all([
+        db.collection('users').doc(uid).collection('aggregates').doc(weekKey).get(),
+        db.collection('users').doc(uid).collection('aggregates').doc(monthKey).get(),
+        db.collection('users').doc(uid).collection('activities').get(),
+      ]);
+
+      const weekAgg  = weekSnap.exists  ? weekSnap.data()  : {};
+      const monthAgg = monthSnap.exists ? monthSnap.data() : {};
+
+      // Count transit/low-meat activities this week
+      const weekActivities = allActSnap.docs
+        .map(d => d.data())
+        .filter(a => {
+          const d = a.date?.toDate?.();
+          if (!d) return false;
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay()); startOfWeek.setHours(0,0,0,0);
+          return d >= startOfWeek;
+        });
+
+      const weekTransitCount = weekActivities.filter(
+        a => a.category === 'transport' && ['bus','train','bicycle','walking'].includes(a.subType)
+      ).length;
+
+      const weekMeatFreeDays = [...new Set(
+        weekActivities
+          .filter(a => a.category === 'diet' && ['vegan','vegetarian'].includes(a.subType))
+          .map(a => a.date?.toDate?.()?.toISOString().slice(0,10))
+          .filter(Boolean)
+      )].length;
+
+      // Monthly below-baseline %
+      const baselineMonthKg = (userData.baselineKgPerYear ?? 0) / 12;
+      const monthBelowBaselinePct = baselineMonthKg > 0
+        ? Math.round(((baselineMonthKg - (monthAgg.totalCo2eKg ?? 0)) / baselineMonthKg) * 100)
+        : 0;
+
+      const stats = {
+        totalActivities:     allActSnap.size,
+        currentStreak:       userData.currentStreak ?? 0,
+        totalSavedKg:        userData.totalSavedKg ?? 0,
+        totalNudgesAccepted: userData.totalNudgesAccepted ?? 0,
+        weekTransitCount,
+        weekMeatFreeDays,
+        monthBelowBaselinePct,
+      };
+
+      // Evaluate which new badges are earned
+      const newBadges = evaluateBadges(stats, alreadyEarned);
+
+      if (newBadges.length === 0) return null;
+
+      // Write each new badge to achievements subcollection
+      const batch = db.batch();
+      for (const badge of newBadges) {
+        batch.set(achRef.doc(badge.id), {
+          ...badge,
+          earnedAt:  FieldValue.serverTimestamp(),
+          displayed: false, // client will set true after showing celebration
+        });
+      }
+      await batch.commit();
+
+      console.log(`🏆 User ${uid} earned: ${newBadges.map(b => b.id).join(', ')}`);
+    } catch (err) {
+      console.error(`❌ Gamification error for ${uid}:`, err);
+    }
+    return null;
+  }
+);
+
 // ── Streak helper ───────────────────────────────────────────────────────────
 async function updateStreak(uid, todayStr) {
   const userRef  = db.collection('users').doc(uid);
@@ -159,9 +252,9 @@ async function updateStreak(uid, todayStr) {
 }
 
 // ── Date utils ──────────────────────────────────────────────────────────────
-function dateStr(d)  { return d.toISOString().slice(0, 10); }        // YYYY-MM-DD
+function dateStr(d)  { return d.toISOString().slice(0, 10); }
 function weekStr(d)  { return `${d.getFullYear()}-W${isoWeek(d)}`; }
-function monthStr(d) { return d.toISOString().slice(0, 7); }         // YYYY-MM
+function monthStr(d) { return d.toISOString().slice(0, 7); }
 
 function isoWeek(date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));

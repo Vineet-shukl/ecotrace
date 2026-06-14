@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+ecotrace/node_modules/
+
+# Build output
+ecotrace/dist/
+
+# Firebase
+.firebase/
+.firebaserc
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+google-application-credentials.json
+service-account*.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp scripts (Python alternative — keep seed.js as canonical)
+seed.py

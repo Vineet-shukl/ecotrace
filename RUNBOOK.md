@@ -46,6 +46,9 @@ gcloud run deploy ecotrace-nudges \
   --memory 512Mi \
   --set-env-vars GOOGLE_CLOUD_PROJECT=ecotrace-app-123 \
   --project ecotrace-app-123
+
+# Service URL (confirmed): https://ecotrace-nudges-483088643135.us-central1.run.app
+# Health check: curl https://ecotrace-nudges-483088643135.us-central1.run.app/health
 ```
 
 ---
@@ -135,6 +138,8 @@ firebase deploy --only firestore:rules --project ecotrace-app-123
 
 | Resource | URL |
 |---|---|
+| **Live App** | **https://ecotrace-app-123.web.app** |
+| **Cloud Run /health** | **https://ecotrace-nudges-483088643135.us-central1.run.app/health** |
 | Firebase Console | https://console.firebase.google.com/project/ecotrace-app-123 |
 | Cloud Run Service | https://console.cloud.google.com/run?project=ecotrace-app-123 |
 | Cloud Build | https://console.cloud.google.com/cloud-build/builds?project=ecotrace-app-123 |

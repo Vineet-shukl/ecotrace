@@ -16,7 +16,9 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getRuleNudges } = require('./ruleFallback');
 const crypto = require('crypto');
 
-const PROJECT    = process.env.GOOGLE_CLOUD_PROJECT ?? 'ecotrace-app-123';
+const PROJECT    = process.env.GOOGLE_CLOUD_PROJECT;
+if (!PROJECT) throw new Error('[geminiNudges] GOOGLE_CLOUD_PROJECT env var is not set');
+
 const LOCATION   = 'us-central1';
 const MODEL      = 'gemini-2.0-flash-001';   // Flash-class per cost discipline
 const DAILY_BUDGET = 3;                       // max AI nudges per user per day

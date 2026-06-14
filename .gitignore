@@ -9,12 +9,23 @@ ecotrace/dist/
 .firebase/
 .firebaserc
 
-# Environment / secrets
+# Environment / secrets — NEVER commit these
 .env
 .env.local
 .env.*.local
+ecotrace/.env
+ecotrace/.env.local
+ecotrace/.env.*.local
+
+# Allow only the safe committed env files:
+!ecotrace/.env.example
+!ecotrace/.env.production
+
+# Service account / credentials — NEVER commit these
 google-application-credentials.json
 service-account*.json
+*-service-account.json
+*.key.json
 
 # OS
 .DS_Store

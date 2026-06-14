@@ -1,0 +1,14 @@
+{
+  "name": "ecotrace-platform",
+  "version": "1.0.0",
+  "description": "EcoTrace Carbon Footprint Platform — seed and admin scripts",
+  "main": "seed.js",
+  "scripts": {
+    "seed": "node seed.js"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "firebase-admin": "^14.0.0"
+  }
+}

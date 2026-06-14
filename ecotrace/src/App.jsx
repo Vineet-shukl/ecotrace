@@ -1,9 +1,10 @@
 // src/App.jsx — Root routing with Firebase Auth guard
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Layout       from './components/Layout';
+import Layout        from './components/Layout';
 import FirestoreTest from './components/FirestoreTest';
-import AuthPage     from './pages/AuthPage';
+import AuthPage      from './pages/AuthPage';
+import Onboarding   from './pages/Onboarding';
 import Dashboard    from './pages/Dashboard';
 import LogActivity  from './pages/LogActivity';
 import Insights     from './pages/Insights';
@@ -42,7 +43,17 @@ function AppRoutes() {
       {/* Public */}
       <Route
         path="/"
-        element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />}
+        element={user ? <Navigate to="/onboarding" replace /> : <AuthPage />}
+      />
+
+      {/* Onboarding (protected — needs auth, no layout) */}
+      <Route
+        path="/onboarding"
+        element={
+          <RequireAuth>
+            <Onboarding />
+          </RequireAuth>
+        }
       />
 
       {/* Protected */}

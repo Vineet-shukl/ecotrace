@@ -41,3 +41,10 @@ npm-debug.log*
 
 # Temp scripts (Python alternative — keep seed.js as canonical)
 seed.py
+
+# Local tooling / generated test artifacts — not part of the repo
+.claude/
+testsprite_tests/
+
+# Marketing assets kept locally, not versioned
+linkedin-assets/

@@ -22,13 +22,10 @@ const db  = getFirestore(app);
 const PROJECT = 'ecotrace-app-123';
 const REGION  = 'us-central1';
 
-// ── 1. Auth onCreate: provision user profile ────────────────────────────────
-// Note: Firebase Functions v2 uses onRequest + Auth triggers via beforeUserCreated
-// For onCreate behaviour, we use a Firestore-triggered pattern OR cloud-tasks.
-// Most straightforward 2nd-gen equivalent is beforeUserCreated (runs before user is persisted).
-// We use onRequest as a fallback callable, plus a Firestore trigger to self-provision.
-// The client already calls setDoc on login so this function handles the authoritative defaults.
-
+// ── 1. Provision user profile ───────────────────────────────────────────────
+// Fires on first write to users/{uid}. The client writes its own profile on
+// login; this trigger fills in authoritative defaults if a doc is created
+// without an email (e.g. created out-of-band).
 exports.provisionUserProfile = onDocumentWritten(
   { document: 'users/{uid}', region: REGION },
   async (event) => {

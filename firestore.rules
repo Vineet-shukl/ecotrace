@@ -18,7 +18,8 @@ service cloud.firestore {
           && d.co2eKg   is number
           && d.co2eKg   >= 0
           && d.co2eKg   <= 500   // sanity cap: 500 kg per single entry
-          && d.uid      is string;
+          && d.uid      is string
+          && d.uid      == request.auth.uid;  // denormalized uid must match the writer
     }
 
     // ── User profile ──────────────────────────────────────────────────────
@@ -26,10 +27,15 @@ service cloud.firestore {
       allow read:   if isOwner(userId);
       allow create: if isOwner(userId)
                     && request.resource.data.keys().hasAll(['email']);
+      // Owner only. Prevent the client from overwriting the server-computed
+      // todayCo2eKg field: either it is not among the changed keys, or its
+      // value is unchanged. The ownership check wraps the whole clause so the
+      // field guard can never be satisfied without isOwner (precedence fix).
       allow update: if isOwner(userId)
-                    // Prevent client from overwriting server-computed fields
-                    && !('todayCo2eKg' in request.resource.data.diff(resource.data).affectedKeys())
-                    || request.resource.data.todayCo2eKg == resource.data.get('todayCo2eKg', 0);
+                    && (
+                         !('todayCo2eKg' in request.resource.data.diff(resource.data).affectedKeys())
+                         || request.resource.data.todayCo2eKg == resource.data.get('todayCo2eKg', 0)
+                       );
 
       // ── Activities ──────────────────────────────────────────────────────
       match /activities/{activityId} {

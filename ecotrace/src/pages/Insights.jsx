@@ -7,10 +7,7 @@ import { logEvent } from 'firebase/analytics';
 import { db, analytics } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchNudges } from '../services/nudgeService';
-
-const CATEGORY_ICONS = {
-  transport: '🚗', diet: '🥗', energy: '⚡', flights: '✈️', habits: '✅', general: '💡',
-};
+import { CATEGORY_ICONS } from '../constants';
 
 export default function Insights() {
   const { user } = useAuth();

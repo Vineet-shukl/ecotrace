@@ -8,15 +8,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import { CATEGORY_ICONS } from '../constants';
 
 const COLORS = ['#22d3a5', '#0ea5e9', '#a78bfa', '#f59e0b'];
-
-const CATEGORY_ICONS = {
-  transport: '🚗',
-  diet: '🥗',
-  energy: '⚡',
-  flights: '✈️',
-};
 
 export default function Dashboard() {
   const { user } = useAuth();

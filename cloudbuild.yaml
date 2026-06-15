@@ -34,6 +34,13 @@ steps:
     entrypoint: 'npm'
     args: ['ci']
 
+  - id: 'spa-test'
+    name: 'node:20-slim'
+    dir: 'ecotrace'
+    entrypoint: 'npm'
+    args: ['test']
+    waitFor: ['spa-install']
+
   - id: 'spa-build'
     name: 'node:20-slim'
     dir: 'ecotrace'
@@ -41,7 +48,7 @@ steps:
     args: ['run', 'build']
     env:
       - 'VITE_NUDGE_SERVICE_URL=https://ecotrace-nudges-${_CLOUD_RUN_REGION}-run.app'
-    waitFor: ['spa-install']
+    waitFor: ['spa-test']   # SPA unit tests must pass before building
 
   # ── Step 3: Build & push nudge service image ──────────────────────────────
   - id: 'docker-build'

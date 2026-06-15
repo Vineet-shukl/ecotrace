@@ -1,8 +1,8 @@
 // src/pages/AuthPage.jsx — Sign-in with Google + Email/Password
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
+  signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
@@ -15,29 +15,23 @@ export default function AuthPage() {
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
 
-  /**
-   * On mount: pick up the result from a completed Google redirect sign-in.
-   * Returns null on a normal (non-redirect) page load — this is fine.
-   * AuthContext listens to onAuthStateChanged and navigates automatically.
-   */
-  useEffect(() => {
-    setLoading(true);
-    getRedirectResult(auth)
-      .then(() => { /* AuthContext picks up user via onAuthStateChanged */ })
-      .catch(e  => { if (e.code !== 'auth/null-provider') setError(e.message); })
-      .finally(()=> { setLoading(false); });
-  }, []);
-
-  /** Starts the Google Sign-In redirect. Page navigates to Google then returns. */
   const handleGoogle = async () => {
     setError('');
     setLoading(true);
     try {
-      await signInWithRedirect(auth, googleProvider);
-      // Page navigates away — loading state clears on return via useEffect
+      await signInWithPopup(auth, googleProvider);
+      // AuthContext onAuthStateChanged picks up the user and navigates
     } catch (e) {
+      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+        // User dismissed the popup — not an error
+      } else if (e.code === 'auth/popup-blocked') {
+        // Browser blocked the popup — fall back to redirect flow
+        await signInWithRedirect(auth, googleProvider);
+        return; // page will navigate away
+      } else {
+        setError(e.message);
+      }
       setLoading(false);
-      setError(e.message);
     }
   };
 

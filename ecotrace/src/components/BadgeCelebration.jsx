@@ -14,17 +14,12 @@ const TIER_COLORS = {
 export default function BadgeCelebration() {
   const { user } = useAuth();
   const [pending, setPending] = useState([]); // queue of undisplayed badges
-  const [current, setCurrent] = useState(null);
 
-  // Poll for newly earned, undisplayed badges
-  useEffect(() => {
-    if (!user) return;
-    const interval = setInterval(checkForNewBadges, 8000);
-    checkForNewBadges(); // check immediately on mount
-    return () => clearInterval(interval);
-  }, [user]);
+  // The badge currently shown is simply the head of the queue — deriving it
+  // (rather than mirroring it into separate state) avoids a redundant effect.
+  const current = pending[0] ?? null;
 
-  async function checkForNewBadges() {
+  const checkForNewBadges = useCallback(async () => {
     if (!user) return;
     try {
       const q = query(
@@ -41,15 +36,17 @@ export default function BadgeCelebration() {
         });
       }
     } catch { /* silent */ }
-  }
+  }, [user]);
 
-  // Show next badge from queue
+  // Poll for newly earned, undisplayed badges
   useEffect(() => {
-    if (!current && pending.length > 0) {
-      setCurrent(pending[0]);
-      setPending(prev => prev.slice(1));
-    }
-  }, [pending, current]);
+    if (!user) return;
+    const interval = setInterval(checkForNewBadges, 8000);
+    // Poll-on-mount: state updates run after the awaited query, not synchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    checkForNewBadges(); // check immediately on mount
+    return () => clearInterval(interval);
+  }, [user, checkForNewBadges]);
 
   async function dismiss() {
     if (!current || !user) return;
@@ -66,7 +63,7 @@ export default function BadgeCelebration() {
         badge_name: current.name,
       });
     }
-    setCurrent(null);
+    setPending(prev => prev.slice(1)); // pop the shown badge → next one appears
   }
 
   if (!current) return null;
@@ -205,7 +202,7 @@ function Confetti({ color }) {
       <style>{`
         @keyframes confetti-fall {
           0%   { transform: translateY(-60px) rotate(0deg); opacity: 0.9; }
-          100% { transform: translateY(300px) rotate(${Math.random() > 0.5 ? '' : '-'}360deg); opacity: 0; }
+          100% { transform: translateY(300px) rotate(360deg); opacity: 0; }
         }
         @keyframes slideUp {
           from { transform: translateY(40px) scale(0.92); opacity: 0; }

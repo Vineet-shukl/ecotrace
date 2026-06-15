@@ -1,5 +1,5 @@
 // src/pages/Insights.jsx — AI nudges via Cloud Run + rule-based fallback
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   collection, query, orderBy, limit, getDocs, updateDoc, doc
 } from 'firebase/firestore';
@@ -19,12 +19,20 @@ export default function Insights() {
   const [generating, setGenerating] = useState(false);
   const [source, setSource]    = useState('');
 
-  useEffect(() => {
-    if (!user) return;
-    loadNudges();
-  }, [user]);
+  const generateFresh = useCallback(async () => {
+    setGenerating(true);
+    try {
+      const fresh = await fetchNudges(3);
+      setNudges(fresh);
+      setSource(fresh[0]?.isAI ? 'gemini' : 'rules');
+    } finally {
+      setGenerating(false);
+      setLoading(false);
+    }
+  }, []);
 
-  async function loadNudges() {
+  const loadNudges = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     try {
       // First check Firestore for cached nudges from last 24h
@@ -50,19 +58,14 @@ export default function Insights() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user, generateFresh]);
 
-  async function generateFresh() {
-    setGenerating(true);
-    try {
-      const fresh = await fetchNudges(3);
-      setNudges(fresh);
-      setSource(fresh[0]?.isAI ? 'gemini' : 'rules');
-    } finally {
-      setGenerating(false);
-      setLoading(false);
-    }
-  }
+  useEffect(() => {
+    if (!user) return;
+    // Fetch-on-mount: state updates run after the awaited reads, not synchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadNudges();
+  }, [user, loadNudges]);
 
   async function handleAction(nudge, action) {
     // GA4 event

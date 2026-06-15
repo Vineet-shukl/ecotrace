@@ -17,8 +17,10 @@ export default function Settings() {
 
   useEffect(() => {
     if (!user) return;
-    setDisplayName(user.displayName || '');
+    // Populate form state once the profile read resolves (keeps all setState
+    // calls inside the async callback rather than synchronously in the effect).
     getDoc(doc(db, 'users', user.uid)).then(snap => {
+      setDisplayName(user.displayName || '');
       if (snap.exists()) {
         setGoal(snap.data().annualGoalKg ?? '');
       }

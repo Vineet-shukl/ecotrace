@@ -1,5 +1,5 @@
 // src/pages/Achievements.jsx — Gamification: streaks, badges, milestones
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,12 +29,8 @@ export default function Achievements() {
   const [userStats, setUserStats] = useState({});
   const [loading, setLoading]     = useState(true);
 
-  useEffect(() => {
+  const fetchAchievements = useCallback(async () => {
     if (!user) return;
-    fetchAchievements();
-  }, [user]);
-
-  async function fetchAchievements() {
     setLoading(true);
     try {
       const [achSnap, userSnap] = await Promise.all([
@@ -45,7 +41,14 @@ export default function Achievements() {
       if (userSnap.exists()) setUserStats(userSnap.data());
     } catch { /* empty state */ }
     finally { setLoading(false); }
-  }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    // Fetch-on-mount: state updates run after the awaited reads, not synchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchAchievements();
+  }, [user, fetchAchievements]);
 
   const totalSaved  = userStats.totalSavedKg   ?? 0;
   const streak      = userStats.currentStreak  ?? 0;

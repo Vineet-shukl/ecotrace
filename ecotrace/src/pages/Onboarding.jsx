@@ -129,10 +129,9 @@ export default function Onboarding() {
         navigate('/dashboard', { replace: true });
       }
     });
-  }, [user]);
+  }, [user, navigate]);
 
   const current = STEPS[step]; // nosemgrep: bracket-object-injection — index is 0..STEPS.length-1
-  const progress = Math.round(((step) / STEPS.length) * 100);
   const isLast   = step === STEPS.length - 1;
 
   function answer(value) {

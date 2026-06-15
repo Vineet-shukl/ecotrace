@@ -1,6 +1,6 @@
 // src/pages/Dashboard.jsx — Main dashboard with stats + charts + nudges
 import { useEffect, useState, useCallback } from 'react';
-import { collection, query, orderBy, limit, getDocs, doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { footprintLabel } from '../services/baselineCalc';
@@ -25,18 +25,8 @@ export default function Dashboard() {
   const [nudges, setNudges]       = useState([]);
   const [loading, setLoading]     = useState(true);
 
-  useEffect(() => {
+  const fetchActivitiesAndNudges = useCallback(async () => {
     if (!user) return;
-    // Real-time listener on user doc for live stats
-    const unsub = onSnapshot(doc(db, 'users', user.uid), snap => {
-      if (snap.exists()) setStats(snap.data());
-      setLoading(false);
-    });
-    fetchActivitiesAndNudges();
-    return unsub;
-  }, [user]);
-
-  async function fetchActivitiesAndNudges() {
     try {
       // Recent activities for trend chart
       const actQuery = query(
@@ -58,7 +48,21 @@ export default function Dashboard() {
     } catch (err) {
       console.error('Dashboard fetch error:', err);
     }
-  }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    // Real-time listener on user doc for live stats
+    const unsub = onSnapshot(doc(db, 'users', user.uid), snap => {
+      if (snap.exists()) setStats(snap.data());
+      setLoading(false);
+    });
+    // Fetch-on-mount: state updates happen after the awaited reads resolve,
+    // not synchronously, so there's no cascading-render concern here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchActivitiesAndNudges();
+    return unsub;
+  }, [user, fetchActivitiesAndNudges]);
 
   // 7-day trend from activities
   const trendData = activities.length > 0

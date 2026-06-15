@@ -8,8 +8,10 @@ import { db, analytics } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchNudges } from '../services/nudgeService';
 import { CATEGORY_ICONS } from '../constants';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export default function Insights() {
+  useDocumentTitle('AI Insights', 'Personalised, AI-powered nudges to help you cut your carbon footprint.');
   const { user } = useAuth();
   const [nudges,  setNudges]   = useState([]);
   const [loading, setLoading]  = useState(true);

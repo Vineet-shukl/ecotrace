@@ -9,10 +9,12 @@ import {
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { CATEGORY_ICONS } from '../constants';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const COLORS = ['#22d3a5', '#0ea5e9', '#a78bfa', '#f59e0b'];
 
 export default function Dashboard() {
+  useDocumentTitle('Dashboard');
   const { user } = useAuth();
   const [stats, setStats]         = useState(null);
   const [activities, setActivities] = useState([]);

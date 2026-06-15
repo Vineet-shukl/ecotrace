@@ -7,8 +7,10 @@ import {
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export default function AuthPage() {
+  useDocumentTitle('Sign In');
   const [mode,    setMode]    = useState('signin'); // 'signin' | 'signup'
   const [email,   setEmail]   = useState('');
   const [password,setPassword]= useState('');

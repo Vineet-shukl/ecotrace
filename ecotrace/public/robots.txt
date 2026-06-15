@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ecotrace-app-123.web.app/sitemap.xml

@@ -7,6 +7,7 @@ import {
 import { logEvent } from 'firebase/analytics';
 import { db, analytics } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 // Emission factors mirror emissionFactors/v1 in Firestore
 const EF = {
@@ -22,6 +23,7 @@ const TABS = [
 ];
 
 export default function LogActivity() {
+  useDocumentTitle('Log Activity', 'Quickly log your transport, diet and energy activities to track your daily carbon footprint.');
   const { user } = useAuth();
   const [tab, setTab]       = useState('transport');
   const [saving, setSaving] = useState(false);

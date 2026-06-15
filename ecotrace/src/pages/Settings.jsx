@@ -5,8 +5,10 @@ import { updateProfile, signOut } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export default function Settings() {
+  useDocumentTitle('Settings');
   const { user } = useAuth();
   const navigate  = useNavigate();
   const [displayName, setDisplayName] = useState('');

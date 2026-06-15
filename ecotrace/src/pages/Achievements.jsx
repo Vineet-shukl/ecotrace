@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const BADGE_CATALOG = [
   { id: 'first_log',       icon: '🌱', name: 'First Step',         desc: 'Logged your first activity',         threshold: 1 },
@@ -24,6 +25,7 @@ const MILESTONES = [
 ];
 
 export default function Achievements() {
+  useDocumentTitle('Achievements');
   const { user } = useAuth();
   const [earned, setEarned]       = useState([]);
   const [userStats, setUserStats] = useState({});

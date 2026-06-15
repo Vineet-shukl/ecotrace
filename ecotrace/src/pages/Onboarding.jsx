@@ -6,6 +6,7 @@ import { logEvent } from 'firebase/analytics';
 import { db, analytics } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateBaseline, footprintLabel } from '../services/baselineCalc';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 // ── Quiz definition ──────────────────────────────────────────────────────────
 const STEPS = [
@@ -114,6 +115,7 @@ const INLINE_EF = {
 };
 
 export default function Onboarding() {
+  useDocumentTitle('Get Started', 'Answer a few questions to calculate your personal carbon footprint baseline.');
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep]       = useState(0);

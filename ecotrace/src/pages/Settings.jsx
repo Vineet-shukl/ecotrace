@@ -1,7 +1,7 @@
 // src/pages/Settings.jsx — User profile, baseline, preferences
 import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { updateProfile, signOut } from 'firebase/auth';
+import { updateProfile, signOut, sendSignInLinkToEmail } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,29 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
   const [error,  setError]  = useState('');
+  const [linkStatus, setLinkStatus] = useState('idle'); // idle | sending | sent | error
+
+  const providerIds  = user?.providerData?.map(p => p.providerId) ?? [];
+  const hasGoogle     = providerIds.includes('google.com');
+  const hasEmailLink  = providerIds.includes('password');
+
+  // Send a one-time link; AuthContext links the credential when the user
+  // returns via it (emailLinkMode === 'link').
+  const handleEnableEmailLink = async () => {
+    if (!user?.email) return;
+    setLinkStatus('sending');
+    try {
+      await sendSignInLinkToEmail(auth, user.email, {
+        url: `${window.location.origin}/settings`,
+        handleCodeInApp: true,
+      });
+      window.localStorage.setItem('emailForSignIn', user.email);
+      window.localStorage.setItem('emailLinkMode', 'link');
+      setLinkStatus('sent');
+    } catch {
+      setLinkStatus('error');
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -125,8 +148,49 @@ export default function Settings() {
           </form>
         </section>
 
+        {/* Sign-in methods card */}
+        <section className="card animate-fade-up animate-fade-up-2" aria-labelledby="signin-heading">
+          <h2 id="signin-heading" style={{ fontSize: 'var(--fs-md)', fontWeight: 700, marginBottom: 'var(--sp-4)' }}>🔑 Sign-in methods</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 'var(--fs-sm)' }}>Google</span>
+              {hasGoogle
+                ? <span className="badge badge-green">✓ Connected</span>
+                : <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-muted)' }}>Not connected</span>}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 'var(--fs-sm)' }}>Passwordless email link</span>
+              {hasEmailLink
+                ? <span className="badge badge-green">✓ Enabled</span>
+                : <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-muted)' }}>Not enabled</span>}
+            </div>
+
+            {!hasEmailLink && (linkStatus === 'sent' ? (
+              <div role="status" style={{ marginTop: 'var(--sp-2)', color: 'var(--clr-primary)', fontSize: 'var(--fs-sm)', padding: 'var(--sp-3)', background: 'rgba(34,211,165,0.1)', borderRadius: 'var(--rad-md)', border: '1px solid rgba(34,211,165,0.2)' }}>
+                ✅ Check <strong>{user?.email}</strong> for a link. Open it on this device to enable passwordless sign-in.
+              </div>
+            ) : (
+              <button
+                id="enable-email-link-btn"
+                className="btn btn-ghost btn-sm"
+                onClick={handleEnableEmailLink}
+                disabled={linkStatus === 'sending'}
+                style={{ alignSelf: 'flex-start', marginTop: 'var(--sp-2)' }}
+              >
+                {linkStatus === 'sending' ? <span className="spinner" /> : '✉️'} Enable passwordless email sign-in
+              </button>
+            ))}
+
+            {linkStatus === 'error' && (
+              <div role="alert" style={{ color: 'var(--clr-danger)', fontSize: 'var(--fs-sm)' }}>
+                Couldn&apos;t send the link. Please try again.
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Account card */}
-        <section className="card animate-fade-up animate-fade-up-2" aria-labelledby="account-heading">
+        <section className="card animate-fade-up animate-fade-up-3" aria-labelledby="account-heading">
           <h2 id="account-heading" style={{ fontSize: 'var(--fs-md)', fontWeight: 700, marginBottom: 'var(--sp-4)' }}>🔒 Account</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--sp-3) 0', borderBottom: '1px solid var(--clr-border)' }}>

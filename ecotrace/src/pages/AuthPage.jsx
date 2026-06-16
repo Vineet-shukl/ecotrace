@@ -5,6 +5,7 @@ import {
   signInWithRedirect,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendSignInLinkToEmail,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -16,6 +17,7 @@ export default function AuthPage() {
   const [password,setPassword]= useState('');
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
 
   const handleGoogle = async () => {
     setError('');
@@ -33,6 +35,33 @@ export default function AuthPage() {
       } else {
         setError(e.message);
       }
+      setLoading(false);
+    }
+  };
+
+  // Passwordless: email the user a one-time sign-in link. Completion is
+  // handled in AuthContext when they return via the link.
+  const handleEmailLink = async () => {
+    setError('');
+    if (!email) { setError('Enter your email above to get a sign-in link.'); return; }
+    setLoading(true);
+    try {
+      const actionCodeSettings = {
+        url: `${window.location.origin}/`, // must be an authorized domain
+        handleCodeInApp: true,             // required for email-link sign-in
+      };
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      // Saved so the same-device return flow doesn't re-prompt for the email.
+      window.localStorage.setItem('emailForSignIn', email);
+      setLinkSent(true);
+    } catch (e) {
+      const msgs = {
+        'auth/invalid-email': 'Please enter a valid email address.',
+        'auth/missing-email': 'Please enter your email address.',
+        'auth/operation-not-allowed': 'Email-link sign-in is not enabled for this project yet.',
+      };
+      setError(msgs[e.code] || e.message);
+    } finally {
       setLoading(false);
     }
   };
@@ -135,6 +164,27 @@ export default function AuthPage() {
             {mode === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
+
+        {/* Passwordless email-link sign-in */}
+        {linkSent ? (
+          <div
+            role="status"
+            style={{ marginTop: 'var(--sp-4)', color: 'var(--clr-primary)', fontSize: 'var(--fs-sm)', padding: 'var(--sp-3)', background: 'rgba(34,211,165,0.1)', borderRadius: 'var(--rad-md)', border: '1px solid rgba(34,211,165,0.2)', textAlign: 'center' }}
+          >
+            ✅ Sign-in link sent to <strong>{email}</strong>. Check your inbox and open it on this device.
+          </div>
+        ) : (
+          <button
+            id="email-link-btn"
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={handleEmailLink}
+            disabled={loading}
+            style={{ width: '100%', marginTop: 'var(--sp-4)' }}
+          >
+            ✉️ Email me a sign-in link (no password)
+          </button>
+        )}
 
         {/* Toggle */}
         <p style={{ textAlign: 'center', marginTop: 'var(--sp-5)', fontSize: 'var(--fs-sm)', color: 'var(--clr-text-muted)' }}>

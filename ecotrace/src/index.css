@@ -23,7 +23,7 @@
 
   --clr-text:       #f0fdf4;
   --clr-text-2:     #a3c4bc;
-  --clr-text-muted: #6b7280;
+  --clr-text-muted: #8b94a3;  /* ~6:1 on --clr-bg — WCAG AA for small text */
 
   /* Gradient */
   --grad-primary: linear-gradient(135deg, #22d3a5 0%, #0ea5e9 100%);
@@ -118,6 +118,47 @@ button, input, select, textarea { font: inherit; }
   clip: rect(0,0,0,0); white-space: nowrap;
 }
 
+/* ── Accessibility ───────────────────────────────────────── */
+/* Skip link: hidden until focused, then pinned for keyboard users (WCAG 2.4.1) */
+.skip-link {
+  position: fixed;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  z-index: 1000;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--clr-primary);
+  color: #0a0f1a;
+  font-weight: 700;
+  border-radius: var(--rad-md);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-150%);
+  transition: transform var(--dur-fast) var(--ease-default);
+}
+.skip-link:focus { transform: translateY(0); color: #0a0f1a; }
+
+/* Visible keyboard focus on every interactive control (WCAG 2.4.7) */
+:focus-visible {
+  outline: 2px solid var(--clr-primary);
+  outline-offset: 2px;
+}
+.btn:focus-visible,
+.google-btn:focus-visible,
+.nav-link:focus-visible,
+.hamburger:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--clr-primary);
+  outline-offset: 2px;
+}
+/* Mouse/touch interactions shouldn't show the ring */
+:focus:not(:focus-visible) { outline: none; }
+
+/* Comfortable tap targets on touch devices (WCAG 2.5.8) */
+@media (pointer: coarse) {
+  .btn, .nav-link, .google-btn, .hamburger,
+  button, [role="button"] { min-block-size: 44px; }
+  .btn-sm { min-block-size: 40px; }
+}
+
 /* ── Card ────────────────────────────────────────────────── */
 .card {
   background: var(--grad-card);
@@ -169,6 +210,7 @@ button, input, select, textarea { font: inherit; }
 }
 
 .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.btn:not(:disabled):active { transform: translateY(0) scale(0.97); }
 .btn-sm { padding: var(--sp-2) var(--sp-4); font-size: var(--fs-xs); }
 .btn-lg { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-md); }
 
@@ -373,6 +415,7 @@ button, input, select, textarea { font: inherit; }
 .nav-link.active {
   background: rgba(34,211,165,0.12);
   color: var(--clr-primary);
+  box-shadow: inset 3px 0 0 var(--clr-primary);
 }
 .nav-link.active .nav-icon { color: var(--clr-primary); }
 .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
@@ -697,6 +740,17 @@ button, input, select, textarea { font: inherit; }
 .animate-fade-up-1 { animation-delay: 100ms; }
 .animate-fade-up-2 { animation-delay: 200ms; }
 .animate-fade-up-3 { animation-delay: 300ms; }
+
+/* Respect users who prefer reduced motion (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 .skeleton {
   background: linear-gradient(90deg,

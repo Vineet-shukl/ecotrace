@@ -1,5 +1,5 @@
 // src/components/Layout.jsx — Responsive app shell with sidebar + mobile nav
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -18,6 +18,8 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const hamburgerRef = useRef(null);
+  const sidebarRef = useRef(null);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -26,8 +28,25 @@ export default function Layout({ children }) {
 
   const closeSidebar = () => setSidebarOpen(false);
 
+  // When the mobile sidebar opens: close on Escape, move focus into it, and
+  // restore focus to the hamburger when it closes (keyboard a11y).
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const hamburger = hamburgerRef.current; // capture for the cleanup closure
+    const onKeyDown = (e) => { if (e.key === 'Escape') setSidebarOpen(false); };
+    document.addEventListener('keydown', onKeyDown);
+    sidebarRef.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      hamburger?.focus();
+    };
+  }, [sidebarOpen]);
+
   return (
     <div className="app-layout">
+      {/* Skip link — first in tab order for keyboard/screen-reader users */}
+      <a href="#main-content" className="skip-link">Skip to content</a>
+
       {/* ── Mobile Top Navbar ──────────────────────────── */}
       <nav className="navbar" aria-label="Mobile navigation">
         <div className="navbar-logo">
@@ -36,9 +55,11 @@ export default function Layout({ children }) {
         </div>
         <button
           id="hamburger-btn"
+          ref={hamburgerRef}
           className="hamburger"
           aria-label="Open navigation menu"
           aria-expanded={sidebarOpen}
+          aria-controls="sidebar"
           onClick={() => setSidebarOpen(true)}
         >
           <span /><span /><span />
@@ -55,8 +76,12 @@ export default function Layout({ children }) {
       {/* ── Sidebar ───────────────────────────────────── */}
       <aside
         id="sidebar"
+        ref={sidebarRef}
+        tabIndex={-1}
         className={`sidebar ${sidebarOpen ? 'open' : ''}`}
         aria-label="Main navigation"
+        role={sidebarOpen ? 'dialog' : undefined}
+        aria-modal={sidebarOpen ? true : undefined}
       >
         <div className="sidebar-logo">
           <span style={{ fontSize: '1.5rem' }}>🌿</span>

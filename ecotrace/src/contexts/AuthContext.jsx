@@ -63,8 +63,13 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // A password-based account must verify its email before using the app.
+  // Google and email-link sign-ins are already verified, so they're exempt.
+  const usesPasswordProvider = !!user?.providerData?.some(p => p.providerId === 'password');
+  const needsVerification = !!user && usesPasswordProvider && !user.emailVerified;
+
   return (
-    <AuthContext.Provider value={{ user, loading: user === undefined }}>
+    <AuthContext.Provider value={{ user, loading: user === undefined, needsVerification }}>
       {children}
     </AuthContext.Provider>
   );

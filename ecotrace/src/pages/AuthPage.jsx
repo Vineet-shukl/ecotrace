@@ -6,9 +6,11 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendSignInLinkToEmail,
+  sendEmailVerification,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { validatePassword, PASSWORD_RULES } from '../services/passwordPolicy';
 
 export default function AuthPage() {
   useDocumentTitle('Sign In');
@@ -18,6 +20,9 @@ export default function AuthPage() {
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
+  const [verifySent, setVerifySent] = useState(false);
+
+  const pwCheck = validatePassword(password);
 
   const handleGoogle = async () => {
     setError('');
@@ -69,19 +74,35 @@ export default function AuthPage() {
   const handleEmail = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Enforce the strong-password policy on sign-up before hitting Firebase.
+    if (mode === 'signup' && !pwCheck.valid) {
+      setError(`Password needs: ${pwCheck.failed.join(', ')}.`);
+      return;
+    }
+
     setLoading(true);
     try {
       if (mode === 'signin') {
         await signInWithEmailAndPassword(auth, email, password);
+        // AuthContext + the verification gate handle unverified accounts.
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        // Send a verification email and don't leave them signed in unverified.
+        await sendEmailVerification(cred.user, { url: `${window.location.origin}/` });
+        await auth.signOut();
+        setVerifySent(true);
+        setMode('signin');
+        setPassword('');
       }
     } catch (e) {
       const msgs = {
         'auth/user-not-found': 'No account found with this email.',
         'auth/wrong-password': 'Incorrect password.',
+        'auth/invalid-credential': 'Incorrect email or password.',
         'auth/email-already-in-use': 'This email is already registered.',
-        'auth/weak-password': 'Password must be at least 6 characters.',
+        'auth/invalid-email': 'Please enter a valid email address.',
+        'auth/weak-password': 'Password is too weak. Use 8+ chars with mixed case, a number and a symbol.',
       };
       setError(msgs[e.code] || e.message);
     } finally {
@@ -117,6 +138,12 @@ export default function AuthPage() {
 
         <div className="auth-divider">or</div>
 
+        {verifySent && (
+          <div role="status" style={{ marginBottom: 'var(--sp-4)', color: 'var(--clr-primary)', fontSize: 'var(--fs-sm)', padding: 'var(--sp-3)', background: 'rgba(34,211,165,0.1)', borderRadius: 'var(--rad-md)', border: '1px solid rgba(34,211,165,0.2)', textAlign: 'center' }}>
+            ✅ Account created. We sent a verification link to your email — verify, then sign in.
+          </div>
+        )}
+
         {/* Email Form */}
         <form onSubmit={handleEmail} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
           <div className="form-group">
@@ -144,7 +171,20 @@ export default function AuthPage() {
               onChange={e => setPassword(e.target.value)}
               required
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              aria-describedby={mode === 'signup' ? 'password-rules' : undefined}
             />
+            {mode === 'signup' && password.length > 0 && (
+              <ul id="password-rules" style={{ listStyle: 'none', margin: 'var(--sp-1) 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {PASSWORD_RULES.map(rule => {
+                  const passed = pwCheck.results.find(r => r.id === rule.id)?.passed;
+                  return (
+                    <li key={rule.id} style={{ fontSize: 'var(--fs-xs)', color: passed ? 'var(--clr-primary)' : 'var(--clr-text-muted)' }}>
+                      {passed ? '✓' : '○'} {rule.label}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
           {error && (

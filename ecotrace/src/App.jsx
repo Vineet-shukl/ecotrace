@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout        from './components/Layout';
 import AuthPage      from './pages/AuthPage';
+import VerifyEmail   from './pages/VerifyEmail';
 import Onboarding   from './pages/Onboarding';
 import Dashboard    from './pages/Dashboard';
 import LogActivity  from './pages/LogActivity';
@@ -11,7 +12,7 @@ import Achievements from './pages/Achievements';
 import Settings     from './pages/Settings';
 
 function RequireAuth({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, needsVerification } = useAuth();
   if (loading) return (
     <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
       <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
@@ -22,11 +23,12 @@ function RequireAuth({ children }) {
     </div>
   );
   if (!user) return <Navigate to="/" replace />;
+  if (needsVerification) return <Navigate to="/verify-email" replace />;
   return children;
 }
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { user, loading, needsVerification } = useAuth();
 
   if (loading) return (
     <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
@@ -42,7 +44,21 @@ function AppRoutes() {
       {/* Public */}
       <Route
         path="/"
-        element={user ? <Navigate to="/onboarding" replace /> : <AuthPage />}
+        element={
+          user
+            ? <Navigate to={needsVerification ? '/verify-email' : '/onboarding'} replace />
+            : <AuthPage />
+        }
+      />
+
+      {/* Email verification gate (auth required, no layout) */}
+      <Route
+        path="/verify-email"
+        element={
+          !user ? <Navigate to="/" replace />
+            : needsVerification ? <VerifyEmail />
+            : <Navigate to="/onboarding" replace />
+        }
       />
 
       {/* Onboarding (protected — needs auth, no layout) */}

@@ -191,10 +191,14 @@ npm run dev
 ### 4. Run unit tests
 
 ```bash
-cd functions
-npm test
-# ✓ 11 tests, ~0.7s — emission calc + gamification engine
+# Cloud Functions — emission calc + gamification engine
+cd functions && npm test          # ✓ 20 tests
+
+# Frontend — baseline calc + password policy (Vitest)
+cd ../ecotrace && npm test         # ✓ 11 tests
 ```
+
+Both suites gate the Cloud Build pipeline (`functions-test`, `spa-test`).
 
 ### 5. Firebase Emulator Suite (full local stack)
 
@@ -249,6 +253,8 @@ All CO₂e factors are stored in Firestore `emissionFactors/v1` — **never hard
 ## 🔒 Security
 
 - **Firestore Rules** — default-deny; all reads/writes validated by `request.auth.uid == uid`
+- **Email verification** — password sign-ups must verify their email before app access
+- **Strong passwords** — enforced policy: 8+ chars with upper, lower, number & symbol
 - **Cloud Run** — requires valid Firebase ID token on every request
 - **Environment vars** — all secrets in `.env` (gitignored) or GCP Secret Manager
 - **Gemini Safety** — `systemInstruction` scopes model to sustainability content only
@@ -315,7 +321,7 @@ MIT © 2025 [Vineet Shukla](https://github.com/Vineet-shukl)
 
 **Built with ❤️ on Google Cloud**
 
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black&style=flat-square)](https://react.dev)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black&style=flat-square)](https://react.dev)
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore_+_Auth-FFCA28?logo=firebase&logoColor=black&style=flat-square)](https://firebase.google.com)
 [![Vertex AI](https://img.shields.io/badge/Vertex_AI-Gemini_2.0_Flash-4285F4?logo=google-cloud&logoColor=white&style=flat-square)](https://cloud.google.com/vertex-ai)
 [![Cloud Run](https://img.shields.io/badge/Cloud_Run-Serverless-4285F4?logo=google-cloud&logoColor=white&style=flat-square)](https://cloud.google.com/run)

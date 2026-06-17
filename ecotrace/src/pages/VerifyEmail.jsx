@@ -1,5 +1,5 @@
 // src/pages/VerifyEmail.jsx — shown when a password account hasn't verified its email
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { sendEmailVerification, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,19 @@ export default function VerifyEmail() {
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [checking, setChecking] = useState(false);
   const [info, setInfo] = useState('');
+
+  // Auto-detect verification (link may be opened in another tab/device).
+  useEffect(() => {
+    const id = setInterval(async () => {
+      if (!auth.currentUser) return;
+      await auth.currentUser.reload();
+      if (auth.currentUser.emailVerified) {
+        clearInterval(id);
+        window.location.replace(`${window.location.origin}/`);
+      }
+    }, 4000);
+    return () => clearInterval(id);
+  }, []);
 
   const resend = async () => {
     if (!auth.currentUser) return;

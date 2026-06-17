@@ -20,7 +20,6 @@ export default function AuthPage() {
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
-  const [verifySent, setVerifySent] = useState(false);
 
   const pwCheck = validatePassword(password);
 
@@ -88,12 +87,9 @@ export default function AuthPage() {
         // AuthContext + the verification gate handle unverified accounts.
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
-        // Send a verification email and don't leave them signed in unverified.
+        // Send a verification email; stay signed in so the verification gate
+        // routes the (unverified) user to /verify-email.
         await sendEmailVerification(cred.user, { url: `${window.location.origin}/` });
-        await auth.signOut();
-        setVerifySent(true);
-        setMode('signin');
-        setPassword('');
       }
     } catch (e) {
       const msgs = {
@@ -137,12 +133,6 @@ export default function AuthPage() {
         </button>
 
         <div className="auth-divider">or</div>
-
-        {verifySent && (
-          <div role="status" style={{ marginBottom: 'var(--sp-4)', color: 'var(--clr-primary)', fontSize: 'var(--fs-sm)', padding: 'var(--sp-3)', background: 'rgba(34,211,165,0.1)', borderRadius: 'var(--rad-md)', border: '1px solid rgba(34,211,165,0.2)', textAlign: 'center' }}>
-            ✅ Account created. We sent a verification link to your email — verify, then sign in.
-          </div>
-        )}
 
         {/* Email Form */}
         <form onSubmit={handleEmail} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>

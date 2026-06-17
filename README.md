@@ -42,7 +42,7 @@ EcoTrace is a **full-stack sustainability platform** that helps individuals unde
 | | |
 |---|---|
 | **🌐 App** | [https://ecotrace-app-123.web.app](https://ecotrace-app-123.web.app) |
-| **👤 Sign in with** | Google Account or Email/Password |
+| **👤 Sign in with** | Google · Email/Password · Passwordless email link |
 | **⚡ AI Nudges** | Up to 3 Gemini-powered nudges per day, then rule-based fallback |
 
 ---
@@ -52,12 +52,12 @@ EcoTrace is a **full-stack sustainability platform** that helps individuals unde
 ```
 ┌─────────────────────────────────────────────────────────┐
 │              Browser — React SPA (Firebase Hosting)      │
-│              Vite 8 · React 18 · Recharts · React Router│
+│              Vite 8 · React 19 · Recharts · React Router│
 └──────────────┬──────────────────────────┬───────────────┘
                │                          │
         Firebase Auth              Cloud Firestore
-    (Google + Email/PW)       users/{uid}/activities
-                               users/{uid}/aggregates
+   (Google · Email/PW ·        users/{uid}/activities
+    email-link · verified)     users/{uid}/aggregates
                                users/{uid}/nudges
                                users/{uid}/achievements
                                emissionFactors/v1
@@ -87,9 +87,9 @@ CI/CD: Cloud Build → Artifact Registry → Cloud Run + Firebase Hosting
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Frontend** | React 18 + Vite 8 | SPA with code-split vendor chunks |
-| **Charts** | Recharts | 7-day trend & category breakdown |
-| **Auth** | Firebase Authentication | Google Sign-In + Email/Password |
+| **Frontend** | React 19 + Vite 8 | SPA with code-split vendor chunks |
+| **Charts** | Recharts 3 | 7-day trend & category breakdown |
+| **Auth** | Firebase Authentication | Google · Email/Password · passwordless email link · email verification |
 | **Database** | Cloud Firestore (Native) | Per-user real-time data |
 | **Functions** | Firebase Cloud Functions v2 | Firestore triggers (Node 20) |
 | **AI Gateway** | Cloud Run + Express | Server-side Vertex AI proxy |
@@ -106,12 +106,17 @@ CI/CD: Cloud Build → Artifact Registry → Cloud Run + Firebase Hosting
 ```
 carbon-platform/
 ├── ecotrace/                   # 🖥️  Vite + React SPA
+│   ├── public/                 # robots.txt, sitemap.xml, site.webmanifest,
+│   │                           # og-image.png, favicon.svg
 │   ├── src/
-│   │   ├── pages/              # Dashboard, LogActivity, Insights,
-│   │   │                       # Onboarding, Achievements, Settings
+│   │   ├── pages/              # Dashboard, LogActivity, Insights, Onboarding,
+│   │   │                       # Achievements, Settings, AuthPage, VerifyEmail
 │   │   ├── components/         # Layout, BadgeCelebration
-│   │   ├── services/           # baselineCalc.js, nudgeService.js
+│   │   ├── services/           # baselineCalc.js, nudgeService.js,
+│   │   │                       # passwordPolicy.js (+ *.test.js — Vitest)
+│   │   ├── hooks/              # useDocumentTitle.js (per-route SEO titles)
 │   │   ├── contexts/           # AuthContext.jsx
+│   │   ├── constants.js        # shared UI constants
 │   │   └── firebase.js         # Firebase SDK init (env-var driven)
 │   ├── .env.example            # 📋 Config template — copy → .env
 │   └── vite.config.js
@@ -154,7 +159,7 @@ carbon-platform/
 
 ```bash
 git clone https://github.com/Vineet-shukl/ecotrace.git
-cd ecotrace-root
+cd ecotrace
 
 # Frontend
 cd ecotrace && npm install

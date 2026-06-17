@@ -6,7 +6,6 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendSignInLinkToEmail,
-  sendEmailVerification,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -86,10 +85,9 @@ export default function AuthPage() {
         await signInWithEmailAndPassword(auth, email, password);
         // AuthContext + the verification gate handle unverified accounts.
       } else {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        // Send a verification email; stay signed in so the verification gate
-        // routes the (unverified) user to /verify-email.
-        await sendEmailVerification(cred.user, { url: `${window.location.origin}/` });
+        await createUserWithEmailAndPassword(auth, email, password);
+        // Stay signed in (unverified) — the gate routes to /verify-email,
+        // which sends the verification email on mount.
       }
     } catch (e) {
       const msgs = {

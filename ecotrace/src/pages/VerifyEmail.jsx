@@ -30,11 +30,26 @@ export default function VerifyEmail() {
     setStatus('sending');
     try {
       await sendEmailVerification(auth.currentUser, { url: `${window.location.origin}/` });
+      window.sessionStorage.setItem('verifyEmailSentAt', String(Date.now()));
       setStatus('sent');
     } catch {
       setStatus('error');
     }
   };
+
+  // Auto-send once on mount (e.g. right after sign-up), with a 60s cooldown
+  // so revisits/reloads don't trigger auth/too-many-requests.
+  useEffect(() => {
+    const last = Number(window.sessionStorage.getItem('verifyEmailSentAt') || 0);
+    if (!auth.currentUser || auth.currentUser.emailVerified) return;
+    if (Date.now() - last < 60000) return;
+    sendEmailVerification(auth.currentUser, { url: `${window.location.origin}/` })
+      .then(() => {
+        window.sessionStorage.setItem('verifyEmailSentAt', String(Date.now()));
+        setStatus('sent');
+      })
+      .catch(() => setStatus('error'));
+  }, []);
 
   // Reload the user record; if verified, onAuthStateChanged-derived state updates.
   const recheck = async () => {
